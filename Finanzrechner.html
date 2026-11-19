@@ -9,6 +9,9 @@
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:wght@500;600&display=swap" />
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
       :root {
         --bg: #edf1f0;
@@ -766,7 +769,35 @@
         color: var(--ink);
         margin-bottom: 12px;
       }
+      .md label.fl {
+        margin-bottom: 8px;
+      }
+      .md label.fl select {
+        display: block;
+        width: 100%;
+        margin-top: 4px;
+      }
+      .sw {
+        display: inline-flex;
+        gap: 2px;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+      .sw i {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 1px solid var(--line);
+        display: inline-block;
+      }
+      input[type="color"] {
+        padding: 0;
+        width: 48px;
+        height: 30px;
+        cursor: pointer;
+      }
     </style>
+    <style id="thstyle"></style>
   </head>
   <body>
     <div class="app">
@@ -780,6 +811,12 @@
         </button>
         <button class="nb" data-v="hb" title="Hauptbuch">
           <span class="ic">▤</span><span class="lb">Hauptbuch</span>
+        </button>
+        <button class="nb" data-v="ex" title="Export">
+          <span class="ic">⇩</span><span class="lb">Export</span>
+        </button>
+        <button class="nb" data-v="th" title="Farbthema">
+          <span class="ic">◐</span><span class="lb">Farbthema</span>
         </button>
         <button class="nb" data-v="kv" title="Kontenverwaltung">
           <span class="ic">⚙</span><span class="lb">Kontenverwaltung</span>
@@ -878,29 +915,41 @@
             <label style="flex: 2 1 200px">Name<input id="kt" /></label>
             <label
               >Typ<select id="ktyp">
-                <option value="UV">Aktiv, Umlaufvermögen</option>
-                <option value="FA">Aktiv mit Laufzeit</option>
-                <option value="KFK">Passiv, kurzfristig</option>
-                <option value="LFK">Passiv, langfristig</option>
-                <option value="FP">Passiv mit Laufzeit</option>
+                <option value="UV">Umlaufvermögen</option>
+                <option value="FA">Anlagevermögen (mit Laufzeit)</option>
+                <option value="KFK">Kurzfristiges Fremdkapital</option>
+                <option value="FP">
+                  Langfristiges Fremdkapital (mit Laufzeit)
+                </option>
                 <option value="EK">Eigenkapital</option>
                 <option value="E">Ertrag</option>
                 <option value="A">Aufwand</option>
               </select></label
             >
-            <label style="flex: 0 1 120px"
-              >Laufzeit (Monate)<input id="kl" type="number" min="0" value="12"
+            <label id="kvw" style="display: none; flex: 0 1 110px"
+              >Laufzeit von (Monat)<input
+                id="kv0"
+                type="number"
+                min="0"
+                value="0"
+            /></label>
+            <label id="klw" style="display: none; flex: 0 1 110px"
+              >Laufzeit bis (Monat)<input
+                id="kl"
+                type="number"
+                min="0"
+                value="12"
             /></label>
             <button class="pri" id="kadd">Konto hinzufügen</button>
           </div>
           <p class="msg" id="kmsg" role="alert"></p>
           <p class="sub" style="margin: 0">
-            Die Laufzeit gilt nur für Konten mit Laufzeit. Ein Konto, das in
-            Buchungen vorkommt, kannst du erst löschen, wenn du diese Buchungen
-            gelöscht hast.
+            Laufzeit (von/bis) gibt es nur bei Anlagevermögen und langfristigem
+            Fremdkapital. Ein Konto, das in Buchungen vorkommt, kannst du erst
+            löschen, wenn du diese Buchungen gelöscht hast.
           </p>
           <details open>
-            <summary>Alle Konten</summary>
+            <summary>Alle Konten und Anfangsbestände</summary>
             <div class="tw">
               <table>
                 <tbody id="kl2"></tbody>
@@ -939,6 +988,101 @@
             anzeigen</label
           >
           <div id="hbv"></div>
+        </section>
+
+        <section data-v="ex">
+          <h2>Export</h2>
+          <p class="sub">
+            Exportiere die Buchhaltung für einen Zeitraum: Journal, Saldenliste,
+            Erfolgsrechnung (für den Zeitraum) und Bilanz (per Ende des
+            Zeitraums).
+          </p>
+          <div class="row">
+            <label>Von Jahr<select id="exy1"></select></label>
+            <label>Von Monat<select id="exm1"></select></label>
+            <label>Bis Jahr<select id="exy2"></select></label>
+            <label>Bis Monat<select id="exm2"></select></label>
+            <label
+              >Format<select id="exf">
+                <option value="xlsx">Excel (.xlsx)</option>
+                <option value="csv">CSV (.csv)</option>
+                <option value="json">JSON (.json)</option>
+              </select></label
+            >
+            <button class="pri" id="exgo">Exportieren</button>
+          </div>
+          <p class="sub" id="exmsg" role="status" style="margin: 8px 0 0"></p>
+        </section>
+
+        <section data-v="th">
+          <h2>Farbthema</h2>
+          <div class="row">
+            <label style="flex: 0 1 210px"
+              >Darstellung<select id="thMode">
+                <option value="auto">Automatisch (System)</option>
+                <option value="hell">Hell</option>
+                <option value="dunkel">Dunkel</option>
+              </select></label
+            >
+            <label style="flex: 1 1 200px"
+              >Name des Themas<input id="thN" maxlength="40"
+            /></label>
+            <button class="pri" id="thSave">Thema speichern</button>
+            <button id="thReset">Zurücksetzen</button>
+          </div>
+          <div class="tw" style="margin-top: 10px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Farbe</th>
+                  <th>Hell</th>
+                  <th>Dunkel</th>
+                </tr>
+              </thead>
+              <tbody id="thEd"></tbody>
+            </table>
+          </div>
+          <p class="sub" id="thMsg" role="status" style="margin: 8px 0 0"></p>
+        </section>
+
+        <section data-v="th">
+          <h2>Themen</h2>
+          <p class="sub">
+            Wende ein Thema an, speichere deine eigenen, lade sie als Datei
+            herunter oder importiere Dateien von anderen.
+          </p>
+          <div class="row">
+            <button id="thFile">Datei laden</button
+            ><button id="thDir">Ordner wählen</button>
+          </div>
+          <input
+            type="file"
+            id="thFileIn"
+            accept=".json,application/json"
+            multiple
+            hidden />
+          <input type="file" id="thDirIn" webkitdirectory multiple hidden />
+          <div id="thList" style="margin-top: 8px"></div>
+          <details>
+            <summary>Weitergeben per Code</summary>
+            <textarea
+              id="thCode"
+              rows="4"
+              style="
+                width: 100%;
+                margin-top: 8px;
+                font: inherit;
+                color: var(--ink);
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                padding: 6px 8px;
+              "></textarea>
+            <div class="row" style="margin-top: 8px">
+              <button id="thGen">Code erzeugen</button
+              ><button id="thLoad">Code laden</button>
+            </div>
+          </details>
         </section>
 
         <section data-v="gf">
@@ -1036,6 +1180,7 @@
       ];
       var MAP = {},
         LZ = {},
+        LV = {},
         END = 0,
         BASE = 0,
         S = { entries: [], fk: 12, av: 12, years: [2026], y: 2026, m: 0 };
@@ -1087,7 +1232,7 @@
         try {
           localStorage.setItem(
             "fr1",
-            JSON.stringify({ S: S, LZ: LZ, K: KONTEN }),
+            JSON.stringify({ S: S, LZ: LZ, LV: LV, K: KONTEN }),
           );
         } catch (e) {}
       }
@@ -1101,6 +1246,7 @@
               rebuild();
             }
             for (var k in v.LZ) if (MAP[k]) LZ[k] = v.LZ[k];
+            LV = v.LV || {};
           }
         } catch (e) {}
       }
@@ -1127,7 +1273,13 @@
             h +=
               "<label>" +
               esc(name(k[0])) +
-              ' (Monate)<input type="number" min="0" data-k="' +
+              ' von (Monat)<input type="number" min="0" data-v="' +
+              k[0] +
+              '" value="' +
+              (LV[k[0]] || 0) +
+              '"></label><label>' +
+              esc(name(k[0])) +
+              ' bis (Monat)<input type="number" min="0" data-k="' +
               k[0] +
               '" value="' +
               LZ[k[0]] +
@@ -1135,15 +1287,16 @@
         });
         $("lz").innerHTML = h;
         $("lz").oninput = function (e) {
-          var k = e.target.dataset.k;
-          if (k) {
-            LZ[k] = Number(e.target.value) || 0;
-            render();
-          }
+          var k = e.target.dataset.k,
+            v = e.target.dataset.v;
+          if (k) LZ[k] = Number(e.target.value) || 0;
+          else if (v) LV[v] = Number(e.target.value) || 0;
+          else return;
+          render();
         };
       }
       function rest(k) {
-        return LZ[k[0]] * 30 - (END - BASE);
+        return LZ[k[0]] * 30 - Math.max((LV[k[0]] || 0) * 30, END - BASE);
       }
       function klass(k) {
         var t = k[2];
@@ -1215,7 +1368,13 @@
             esc(name(e.h)) +
             '</td><td class="n">' +
             fmt(e.b) +
-            '</td><td><button class="lnk" data-d="' +
+            '</td><td class="n">' +
+            (e.ab
+              ? ""
+              : '<button class="lnk" style="color:var(--acc)" data-e="' +
+                i +
+                '" aria-label="Buchung bearbeiten">Bearbeiten</button>') +
+            '<button class="lnk" data-d="' +
             i +
             '" aria-label="Buchung löschen">Löschen</button></td></tr>';
         });
@@ -1312,6 +1471,10 @@
           var l =
             LZ[k[0]] != null
               ? " <small>(" +
+                (LV[k[0]] || 0) +
+                "–" +
+                LZ[k[0]] +
+                " Mt.; " +
                 (rest(k) > 0
                   ? "Rest " + Math.round(rest(k) / 3) / 10 + " Mt."
                   : "fällig") +
@@ -1417,6 +1580,8 @@
               " CHF. Prüfe, ob die Anfangsbestände gegen 9100 gebucht sind.") +
           "</p>";
         hbRender(ST, END);
+        var fe = document.activeElement;
+        if (!(fe && fe.dataset && fe.dataset.ab)) kliste();
         save();
       }
       function buchen() {
@@ -1456,12 +1621,82 @@
         if (e.key == "Enter") buchen();
       };
       $("jb").onclick = function (e) {
-        var d = e.target.dataset.d;
-        if (d != null) {
-          S.entries.splice(Number(d), 1);
+        var b = e.target.closest("button");
+        if (!b) return;
+        if (b.dataset.d != null) {
+          S.entries.splice(Number(b.dataset.d), 1);
           render();
-        }
+        } else if (b.dataset.e != null) editEntry(Number(b.dataset.e));
       };
+      function editEntry(i) {
+        var e = S.entries[i];
+        if (!e || e.ab) return;
+        var o = $("soll").innerHTML,
+          mo = MN.map(function (n, j) {
+            return '<option value="' + (j + 1) + '">' + n + "</option>";
+          }).join(""),
+          ys = S.years
+            .map(function (y) {
+              return "<option>" + y + "</option>";
+            })
+            .join("");
+        modal(
+          "Geschäftsfall bearbeiten",
+          '<label class="fl">Geschäftsfall<input type="text" id="eT" maxlength="80"></label><label class="fl">Soll<select id="eS">' +
+            o +
+            '</select></label><label class="fl">Haben<select id="eH">' +
+            o +
+            '</select></label><label class="fl">Betrag (CHF)<input type="number" id="eB" min="0" step="0.05"></label><label class="fl">Jahr<select id="eY">' +
+            ys +
+            '</select></label><label class="fl">Monat<select id="eM">' +
+            mo +
+            '</select></label><label class="fl">Tag<input type="number" id="eD" min="1" max="30"></label><p class="bad" id="eErr"></p>',
+          [
+            { t: "Abbrechen" },
+            {
+              t: "Speichern",
+              cls: "pri",
+              fn: function () {
+                var s = $("eS").value,
+                  h = $("eH").value,
+                  b = parseFloat($("eB").value),
+                  er = $("eErr");
+                if (!MAP[s] || !MAP[h]) {
+                  er.textContent = "Wähle ein Soll- und ein Haben-Konto aus.";
+                  return false;
+                }
+                if (s == h) {
+                  er.textContent =
+                    "Soll und Haben müssen verschiedene Konten sein.";
+                  return false;
+                }
+                if (!(b > 0)) {
+                  er.textContent = "Gib einen Betrag grösser als 0 ein.";
+                  return false;
+                }
+                e.s = s;
+                e.h = h;
+                e.b = Math.round(b * 100) / 100;
+                e.t = $("eT").value.trim();
+                e.y = Number($("eY").value);
+                e.m = Number($("eM").value);
+                e.d = Math.min(
+                  30,
+                  Math.max(1, Math.round(Number($("eD").value)) || 1),
+                );
+                render();
+              },
+            },
+          ],
+        );
+        $("eT").value = e.t || "";
+        $("eS").value = e.s;
+        $("eH").value = e.h;
+        $("eB").value = e.b;
+        $("eY").value = e.y;
+        $("eM").value = e.m;
+        $("eD").value = e.d;
+      }
       $("limFK").oninput = function () {
         S.fk = Number(this.value) || 0;
         render();
@@ -1554,6 +1789,7 @@
         var cur = $("bm").value;
         $("bm").innerHTML = mo;
         $("bm").value = cur || S.m || 1;
+        exFill(mo);
       }
       $("jahr").onchange = function () {
         S.y = Number(this.value);
@@ -1596,11 +1832,11 @@
         render();
       };
       var TL = {
-        UV: "Aktiv, Umlaufvermögen",
-        FA: "Aktiv mit Laufzeit",
-        KFK: "Passiv, kurzfristig",
-        LFK: "Passiv, langfristig",
-        FP: "Passiv mit Laufzeit",
+        UV: "Umlaufvermögen",
+        FA: "Anlagevermögen (mit Laufzeit)",
+        KFK: "Kurzfristiges Fremdkapital",
+        LFK: "Langfristiges Fremdkapital (fest)",
+        FP: "Langfristiges Fremdkapital (mit Laufzeit)",
         EK: "Eigenkapital",
         E: "Ertrag",
         A: "Aufwand",
@@ -1608,6 +1844,11 @@
       };
       function kliste() {
         $("kl2").innerHTML = KONTEN.map(function (k) {
+          var sd = side(k[2]),
+            ab = 0;
+          S.entries.forEach(function (e) {
+            if (e.ab == k[0]) ab += e.b;
+          });
           return (
             "<tr><td>" +
             esc(k[0]) +
@@ -1615,6 +1856,16 @@
             esc(k[1]) +
             "</td><td>" +
             TL[k[2]] +
+            "</td><td>" +
+            (sd == "A" || sd == "P"
+              ? '<input type="number" min="0" step="0.05" data-ab="' +
+                esc(k[0]) +
+                '" value="' +
+                (ab || "") +
+                '" placeholder="Anfangsbestand CHF" aria-label="Anfangsbestand ' +
+                esc(k[0]) +
+                '" style="width:160px">'
+              : "") +
             "</td><td>" +
             (k[2] == "X"
               ? ""
@@ -1657,6 +1908,7 @@
         if (t == "FA" || t == "FP") {
           k.push(Math.max(0, Number($("kl").value) || 0));
           LZ[nr] = k[3];
+          LV[nr] = Math.max(0, Number($("kv0").value) || 0);
         }
         MAP[nr] = k;
         KONTEN.push(k);
@@ -1673,7 +1925,7 @@
         if (!nr) return;
         var m = $("kmsg"),
           n = S.entries.filter(function (x) {
-            return x.s == nr || x.h == nr;
+            return x.ab != nr && (x.s == nr || x.h == nr);
           }).length;
         if (n) {
           m.textContent =
@@ -1685,11 +1937,15 @@
           return;
         }
         m.textContent = "";
+        S.entries = S.entries.filter(function (x) {
+          return x.ab != nr;
+        });
         KONTEN = KONTEN.filter(function (k) {
           return k[0] != nr;
         });
         delete MAP[nr];
         delete LZ[nr];
+        delete LV[nr];
         refresh();
       };
       var PKEY = "finanz_presets";
@@ -1764,6 +2020,7 @@
           av: S.av,
           konten: JSON.parse(JSON.stringify(KONTEN)),
           laufzeiten: L,
+          laufzeitenVon: JSON.parse(JSON.stringify(LV)),
           years: withE ? S.years.slice() : [],
           entries: withE ? JSON.parse(JSON.stringify(S.entries)) : [],
         };
@@ -1827,6 +2084,9 @@
         KONTEN = K;
         rebuild();
         for (k in L) if (MAP[k]) LZ[k] = L[k];
+        LV = {};
+        for (k in p.laufzeitenVon || {})
+          if (MAP[k]) LV[k] = Number(p.laufzeitenVon[k]) || 0;
         if (withE) {
           S.entries = p.entries
             .filter(function (e) {
@@ -1851,6 +2111,7 @@
                 y: e.y,
                 m: e.m,
                 d: e.d,
+                ab: typeof e.ab == "string" ? e.ab : undefined,
               };
             });
           var ys = (Array.isArray(p.years) ? p.years : []).filter(
@@ -2060,6 +2321,706 @@
         var b = e.target.closest(".nb");
         if (b) view(b.dataset.v);
       };
+      function setAB(nr, b) {
+        S.entries = S.entries.filter(function (e) {
+          return e.ab != nr;
+        });
+        if (b > 0) {
+          var e = {
+            t: "Anfangsbestand",
+            b: Math.round(b * 100) / 100,
+            y: S.years[0],
+            m: 1,
+            d: 1,
+            ab: nr,
+          };
+          if (side(MAP[nr][2]) == "A") {
+            e.s = nr;
+            e.h = "9100";
+          } else {
+            e.s = "9100";
+            e.h = nr;
+          }
+          S.entries.unshift(e);
+        }
+      }
+      $("kl2").onchange = function (e) {
+        var nr = e.target.dataset.ab;
+        if (!nr) return;
+        setAB(nr, parseFloat(e.target.value) || 0);
+        render();
+      };
+      function ktog() {
+        var on = $("ktyp").value == "FA" || $("ktyp").value == "FP";
+        $("kvw").style.display = $("klw").style.display = on ? "" : "none";
+      }
+      $("ktyp").onchange = ktog;
+      ktog();
+      var THK = "finanzrechner_themes",
+        TKEYS = [
+          ["bg", "Hintergrund"],
+          ["card", "Karten"],
+          ["ink", "Text"],
+          ["mute", "Text gedämpft"],
+          ["line", "Linien"],
+          ["acc", "Akzent"],
+          ["ok", "Positiv"],
+          ["bad", "Negativ"],
+          ["ttl", "Titelleiste"],
+        ];
+      var BUILT = [
+        {
+          name: "Standard",
+          light: {
+            bg: "#f3f4f6",
+            card: "#ffffff",
+            ink: "#1d2125",
+            mute: "#6b7280",
+            line: "#dfe2e6",
+            acc: "#2e7d5b",
+            ok: "#2e9a2e",
+            bad: "#e53935",
+            ttl: "#8a8f94",
+          },
+          dark: {
+            bg: "#111315",
+            card: "#1b1e22",
+            ink: "#e8eaed",
+            mute: "#9aa0a6",
+            line: "#33373d",
+            acc: "#2e7d5b",
+            ok: "#4cc24c",
+            bad: "#ff6b66",
+            ttl: "#4b5057",
+          },
+        },
+        {
+          name: "Ozean",
+          light: {
+            bg: "#eef2f9",
+            card: "#ffffff",
+            ink: "#14213d",
+            mute: "#5b6b86",
+            line: "#d3dbea",
+            acc: "#2563eb",
+            ok: "#1c7a43",
+            bad: "#c0392b",
+            ttl: "#5b7db1",
+          },
+          dark: {
+            bg: "#0e1624",
+            card: "#16233a",
+            ink: "#e6ecf7",
+            mute: "#93a4c0",
+            line: "#2a3c5a",
+            acc: "#5b9bff",
+            ok: "#4cc24c",
+            bad: "#ff6b66",
+            ttl: "#34507f",
+          },
+        },
+        {
+          name: "Bordeaux",
+          light: {
+            bg: "#f6f1f1",
+            card: "#ffffff",
+            ink: "#2a1a1d",
+            mute: "#7a6468",
+            line: "#e6d9db",
+            acc: "#9b2c3f",
+            ok: "#2e7d4f",
+            bad: "#c0392b",
+            ttl: "#8a6a70",
+          },
+          dark: {
+            bg: "#1a1214",
+            card: "#261a1d",
+            ink: "#f1e6e8",
+            mute: "#b39a9f",
+            line: "#3d2a2f",
+            acc: "#e0687d",
+            ok: "#4cc24c",
+            bad: "#ff8a73",
+            ttl: "#5a3a41",
+          },
+        },
+      ];
+      function cp(o) {
+        return JSON.parse(JSON.stringify(o));
+      }
+      function lum(h) {
+        var n = parseInt(h.slice(1), 16);
+        return (
+          (0.299 * ((n >> 16) & 255) +
+            0.587 * ((n >> 8) & 255) +
+            0.114 * (n & 255)) /
+          255
+        );
+      }
+      function thCss(c) {
+        var o = "";
+        for (var k in c) o += "--" + k + ":" + c[k] + ";";
+        return (
+          o +
+          "--on:" +
+          (lum(c.acc) > 0.6 ? "#14181c" : "#fff") +
+          ";--ttlon:" +
+          (lum(c.ttl) > 0.6 ? "#14181c" : "#fff") +
+          ";"
+        );
+      }
+      function applyTheme() {
+        var t = S.theme,
+          L = thCss(t.light),
+          D = thCss(t.dark) + "color-scheme:dark;",
+          r = document.documentElement;
+        $("thstyle").textContent =
+          ":root{" +
+          L +
+          '}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){' +
+          D +
+          '}}:root[data-theme="dark"]{' +
+          D +
+          '}:root[data-theme="light"]{' +
+          L +
+          "color-scheme:light;}.kf th.ttl,.tk th.tn{background:var(--ttl);color:var(--ttlon)}button.pri,.chip.on,.nb.on{color:var(--on)!important}";
+        if (S.mode == "hell") r.setAttribute("data-theme", "light");
+        else if (S.mode == "dunkel") r.setAttribute("data-theme", "dark");
+        else r.removeAttribute("data-theme");
+      }
+      function thLib() {
+        try {
+          return JSON.parse(localStorage.getItem(THK) || "[]");
+        } catch (e) {
+          return [];
+        }
+      }
+      function thSaveLib(l) {
+        try {
+          localStorage.setItem(THK, JSON.stringify(l));
+        } catch (e) {}
+      }
+      function validTheme(t) {
+        return (
+          !!t &&
+          t.format == "finanzrechner-theme" &&
+          typeof t.name == "string" &&
+          ["light", "dark"].every(function (m) {
+            return (
+              t[m] &&
+              TKEYS.every(function (k) {
+                return /^#[0-9a-fA-F]{6}$/.test(t[m][k[0]]);
+              })
+            );
+          })
+        );
+      }
+      function normTheme(t) {
+        var o = {
+          format: "finanzrechner-theme",
+          v: 1,
+          name: String(t.name).slice(0, 40),
+          light: {},
+          dark: {},
+        };
+        TKEYS.forEach(function (k) {
+          o.light[k[0]] = t.light[k[0]].toLowerCase();
+          o.dark[k[0]] = t.dark[k[0]].toLowerCase();
+        });
+        return o;
+      }
+      function thMsg(x) {
+        $("thMsg").textContent = x;
+      }
+      function buildEditor() {
+        $("thN").value = S.theme.name;
+        $("thEd").innerHTML = TKEYS.map(function (k) {
+          return (
+            "<tr><td>" +
+            k[1] +
+            '</td><td><input type="color" data-m="light" data-c="' +
+            k[0] +
+            '" value="' +
+            S.theme.light[k[0]] +
+            '" aria-label="' +
+            k[1] +
+            ' hell"></td><td><input type="color" data-m="dark" data-c="' +
+            k[0] +
+            '" value="' +
+            S.theme.dark[k[0]] +
+            '" aria-label="' +
+            k[1] +
+            ' dunkel"></td></tr>'
+          );
+        }).join("");
+      }
+      function renderThemes() {
+        var all = BUILT.map(function (t) {
+          return { t: t, b: 1 };
+        }).concat(
+          thLib().map(function (t, i) {
+            return { t: t, i: i };
+          }),
+        );
+        $("thList").innerHTML = all
+          .map(function (x, n) {
+            return (
+              '<div class="pl"><div><span class="sw"><i style="background:' +
+              x.t.light.acc +
+              '"></i><i style="background:' +
+              x.t.light.bg +
+              '"></i><i style="background:' +
+              x.t.dark.bg +
+              '"></i><i style="background:' +
+              x.t.dark.acc +
+              '"></i></span><b>' +
+              esc(x.t.name) +
+              "</b>" +
+              (x.b ? " <small>(mitgeliefert)</small>" : "") +
+              '</div><div class="row"><button class="pri" data-ta="' +
+              n +
+              '">Anwenden</button><button data-tf="' +
+              n +
+              '">Als Datei</button>' +
+              (x.b
+                ? ""
+                : '<button class="ib x" data-tx="' +
+                  x.i +
+                  '" title="Aus Liste löschen">✕</button>') +
+              "</div></div>"
+            );
+          })
+          .join("");
+      }
+      $("thEd").oninput = function (e) {
+        var d = e.target.dataset;
+        if (!d.c) return;
+        S.theme[d.m][d.c] = e.target.value;
+        applyTheme();
+        save();
+      };
+      $("thN").oninput = function () {
+        S.theme.name = this.value;
+        save();
+      };
+      $("thMode").onchange = function () {
+        S.mode = this.value;
+        applyTheme();
+        save();
+      };
+      $("thList").onclick = function (e) {
+        var b = e.target.closest("button");
+        if (!b) return;
+        var l = thLib(),
+          all = BUILT.concat(l);
+        if (b.dataset.ta != null) {
+          var t = all[Number(b.dataset.ta)];
+          S.theme = cp(t);
+          applyTheme();
+          buildEditor();
+          save();
+          thMsg("Thema „" + t.name + "“ angewendet.");
+        } else if (b.dataset.tf != null) {
+          var q = all[Number(b.dataset.tf)];
+          dl(
+            "Farbthema_" +
+              q.name.replace(/[^\w\- äöüÄÖÜéèà]/g, "_").trim() +
+              ".json",
+            JSON.stringify(normTheme(q), null, 2),
+          );
+        } else if (b.dataset.tx != null) {
+          twoStep(b, "Löschen?", function () {
+            l.splice(Number(b.dataset.tx), 1);
+            thSaveLib(l);
+            renderThemes();
+          });
+        }
+      };
+      $("thSave").onclick = function () {
+        var n = S.theme.name.trim();
+        if (!n) {
+          thMsg("Bitte einen Namen eingeben.");
+          return;
+        }
+        if (
+          BUILT.some(function (x) {
+            return x.name == n;
+          })
+        ) {
+          thMsg("Dieser Name ist für ein mitgeliefertes Thema reserviert.");
+          return;
+        }
+        S.theme.name = n;
+        var t = normTheme(S.theme),
+          l = thLib().filter(function (x) {
+            return x.name != n;
+          });
+        l.push(t);
+        thSaveLib(l);
+        renderThemes();
+        thMsg("Thema „" + n + "“ gespeichert.");
+      };
+      $("thReset").onclick = function () {
+        S.theme = cp(BUILT[0]);
+        applyTheme();
+        buildEditor();
+        save();
+        thMsg("Auf Standard zurückgesetzt.");
+      };
+      async function thImport(files) {
+        var ok = 0,
+          bad = 0,
+          seen = 0,
+          l = thLib();
+        for (var i = 0; i < files.length; i++) {
+          var f = files[i];
+          if (!/\.json$/i.test(f.name)) continue;
+          seen++;
+          try {
+            var p = JSON.parse(await f.text());
+            if (
+              validTheme(p) &&
+              !BUILT.some(function (x) {
+                return x.name == p.name;
+              })
+            ) {
+              var t = normTheme(p);
+              l = l.filter(function (x) {
+                return x.name != t.name;
+              });
+              l.push(t);
+              ok++;
+            } else bad++;
+          } catch (e) {
+            bad++;
+          }
+        }
+        thSaveLib(l);
+        renderThemes();
+        thMsg(
+          seen
+            ? ok +
+                " Thema/Themen importiert" +
+                (bad
+                  ? ", " + bad + " Datei(en) übersprungen (kein gültiges Thema)"
+                  : "") +
+                "."
+            : "Keine .json-Dateien gefunden.",
+        );
+      }
+      $("thFile").onclick = function () {
+        $("thFileIn").click();
+      };
+      $("thDir").onclick = function () {
+        $("thDirIn").click();
+      };
+      $("thFileIn").onchange = function (e) {
+        thImport(Array.from(e.target.files));
+        e.target.value = "";
+      };
+      $("thDirIn").onchange = function (e) {
+        thImport(Array.from(e.target.files));
+        e.target.value = "";
+      };
+      $("thGen").onclick = function () {
+        $("thCode").value = JSON.stringify(normTheme(S.theme));
+      };
+      $("thLoad").onclick = function () {
+        try {
+          var t = JSON.parse($("thCode").value);
+          if (!validTheme(t)) throw 0;
+          S.theme = normTheme(t);
+          applyTheme();
+          buildEditor();
+          save();
+          thMsg(
+            "Thema aus Code geladen. Mit „Thema speichern“ legst du es in die Liste.",
+          );
+        } catch (e) {
+          thMsg("Der Code ist kein gültiges Farbthema.");
+        }
+      };
+      function thInit() {
+        if (
+          !S.theme ||
+          !validTheme(Object.assign({ format: "finanzrechner-theme" }, S.theme))
+        )
+          S.theme = cp(BUILT[0]);
+        S.mode = S.mode || "auto";
+        $("thMode").value = S.mode;
+        applyTheme();
+        buildEditor();
+        renderThemes();
+      }
+      var exSet = 0;
+      function exFill(mo) {
+        var ys = S.years
+          .map(function (y) {
+            return "<option>" + y + "</option>";
+          })
+          .join("");
+        [
+          ["exy1", ys],
+          ["exy2", ys],
+          ["exm1", mo],
+          ["exm2", mo],
+        ].forEach(function (x) {
+          var cur = $(x[0]).value;
+          $(x[0]).innerHTML = x[1];
+          if (cur) $(x[0]).value = cur;
+        });
+        if (!exSet) {
+          $("exy1").value = S.years[0];
+          $("exm1").value = 1;
+          $("exy2").value = S.years[S.years.length - 1];
+          $("exm2").value = 12;
+          exSet = 1;
+        }
+      }
+      function r2(x) {
+        return Math.round(x * 100) / 100;
+      }
+      function calcRange(y1, m1, y2, m2, lab) {
+        var oE = END,
+          oB = BASE,
+          ST = y1 * 360 + (m1 - 1) * 30,
+          EN = y2 * 360 + m2 * 30,
+          sal = {},
+          sp = {},
+          so = {},
+          ha = {},
+          J = [["Nr.", "Datum", "Geschäftsfall", "Soll", "Haben", "Betrag"]];
+        KONTEN.forEach(function (k) {
+          sal[k[0]] = 0;
+          sp[k[0]] = 0;
+          so[k[0]] = 0;
+          ha[k[0]] = 0;
+        });
+        S.entries.forEach(function (e) {
+          var ti = e.y * 360 + (e.m - 1) * 30 + e.d;
+          if (ti > EN) return;
+          sal[e.s] += e.b;
+          sal[e.h] -= e.b;
+          if (ti > ST) {
+            sp[e.s] += e.b;
+            sp[e.h] -= e.b;
+            so[e.s] += e.b;
+            ha[e.h] += e.b;
+            J.push([
+              J.length,
+              pad2(e.d) + "." + pad2(e.m) + "." + e.y,
+              e.t || "",
+              name(e.s),
+              name(e.h),
+              r2(e.b),
+            ]);
+          }
+        });
+        BASE = S.years[0] * 360;
+        END = EN;
+        var SL = [["Konto", "Name", "Typ", "Soll", "Haben", "Saldo"]],
+          E = [["Ertrag"]],
+          A = [["Aufwand"]],
+          ert = 0,
+          auf = 0,
+          gk = 0;
+        KONTEN.forEach(function (k) {
+          var nr = k[0],
+            sd = side(k[2]),
+            er = sd == "E" || sd == "W";
+          if (
+            nr != "9100" &&
+            !(nz(so[nr]) && nz(ha[nr]) && nz(er ? sp[nr] : sal[nr]))
+          ) {
+            var v = er ? sp[nr] : sal[nr];
+            SL.push([
+              nr,
+              k[1],
+              TL[k[2]],
+              r2(so[nr]),
+              r2(ha[nr]),
+              r2(sd == "A" || sd == "W" ? v : -v),
+            ]);
+          }
+          if (er) {
+            gk -= sal[nr];
+            var p = sp[nr];
+            if (!nz(p)) {
+              if (sd == "E") {
+                E.push([name(nr), r2(-p)]);
+                ert -= p;
+              } else {
+                A.push([name(nr), r2(p)]);
+                auf += p;
+              }
+            }
+          }
+        });
+        var gew = ert - auf;
+        var ER = [
+          ["Erfolgsrechnung " + (S.firma || "") + " für " + lab],
+        ].concat(E, [["Total Ertrag", r2(ert)], [""]], A, [
+          ["Total Aufwand", r2(auf)],
+          [""],
+          [gew >= 0 ? "Gewinn" : "Verlust", r2(Math.abs(gew))],
+        ]);
+        var G = { UV: [], AV: [], KFK: [], LFK: [], EK: [] },
+          T = { UV: 0, AV: 0, KFK: 0, LFK: 0, EK: 0 };
+        KONTEN.forEach(function (k) {
+          var s = side(k[2]),
+            v = sal[k[0]];
+          if ((s != "A" && s != "P") || nz(v)) return;
+          if (s == "P") v = -v;
+          var c = klass(k);
+          G[c].push([name(k[0]), r2(v)]);
+          T[c] += v;
+        });
+        var ek = T.EK + gk,
+          akt = T.UV + T.AV,
+          pas = T.KFK + T.LFK + ek;
+        var BIL = [
+          ["Bilanz " + (S.firma || "") + " per 30." + pad2(m2) + "." + y2],
+          ["Aktiven"],
+          ["Umlaufvermögen"],
+        ].concat(
+          G.UV,
+          [["Total Umlaufvermögen", r2(T.UV)], ["Anlagevermögen"]],
+          G.AV,
+          [
+            ["Total Anlagevermögen", r2(T.AV)],
+            ["Total Aktiven", r2(akt)],
+            [""],
+            ["Passiven"],
+            ["Kurzfristiges Fremdkapital"],
+          ],
+          G.KFK,
+          [
+            ["Total kurzfristiges Fremdkapital", r2(T.KFK)],
+            ["Langfristiges Fremdkapital"],
+          ],
+          G.LFK,
+          [["Total langfristiges Fremdkapital", r2(T.LFK)], ["Eigenkapital"]],
+          G.EK,
+          [
+            [gk >= 0 ? "Gewinn (kumuliert)" : "Verlust (kumuliert)", r2(gk)],
+            ["Total Eigenkapital", r2(ek)],
+            ["Total Passiven", r2(pas)],
+          ],
+        );
+        END = oE;
+        BASE = oB;
+        return [
+          ["Journal", J],
+          ["Saldenliste", SL],
+          ["Erfolgsrechnung", ER],
+          ["Bilanz", BIL],
+        ];
+      }
+      async function dl(filename, data) {
+        try {
+          var d =
+            window.claude && claude.use ? await claude.use("downloads") : null;
+          if (d) {
+            await d.save({ filename: filename, data: data });
+            return true;
+          }
+        } catch (e) {
+          if (e && e.code == "declined") return false;
+        }
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([data]));
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return true;
+      }
+      $("exgo").onclick = async function () {
+        var y1 = Number($("exy1").value),
+          m1 = Number($("exm1").value),
+          y2 = Number($("exy2").value),
+          m2 = Number($("exm2").value),
+          f = $("exf").value,
+          m = $("exmsg");
+        if (y1 * 12 + m1 > y2 * 12 + m2) {
+          m.textContent = "„Von“ muss vor „Bis“ liegen.";
+          return;
+        }
+        if (f == "xlsx" && typeof XLSX == "undefined") {
+          m.textContent =
+            "Die Excel-Bibliothek konnte nicht geladen werden. Wähle CSV oder JSON.";
+          return;
+        }
+        var lab = MN[m1 - 1] + " " + y1 + " bis " + MN[m2 - 1] + " " + y2,
+          sh = calcRange(y1, m1, y2, m2, lab),
+          data;
+        if (f == "xlsx") {
+          var wb = XLSX.utils.book_new();
+          sh.forEach(function (s) {
+            var ws = XLSX.utils.aoa_to_sheet(s[1]),
+              w = [];
+            s[1].forEach(function (r) {
+              r.forEach(function (c, i) {
+                w[i] = Math.max(w[i] || 8, String(c).length + 2);
+              });
+            });
+            ws["!cols"] = w.map(function (x) {
+              return { wch: Math.min(x, 50) };
+            });
+            XLSX.utils.book_append_sheet(wb, ws, s[0]);
+          });
+          data = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        } else if (f == "csv") {
+          var q = function (c) {
+            c = String(c);
+            return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c;
+          };
+          data =
+            "\ufeff" +
+            sh
+              .map(function (s) {
+                return (
+                  s[0] +
+                  "\n" +
+                  s[1]
+                    .map(function (r) {
+                      return r.map(q).join(";");
+                    })
+                    .join("\n")
+                );
+              })
+              .join("\n\n");
+        } else {
+          var o = {};
+          sh.forEach(function (s) {
+            o[s[0]] = s[1];
+          });
+          data = JSON.stringify(
+            { firma: S.firma || "", zeitraum: lab, blaetter: o },
+            null,
+            2,
+          );
+        }
+        var fn =
+          "Finanzrechner" +
+          (S.firma
+            ? "_" + S.firma.replace(/[^\w\- äöüÄÖÜéèà]/g, "_").trim()
+            : "") +
+          "_" +
+          y1 +
+          "-" +
+          pad2(m1) +
+          "_bis_" +
+          y2 +
+          "-" +
+          pad2(m2) +
+          "." +
+          f;
+        m.textContent = (await dl(fn, data))
+          ? "Export bereit: " + fn
+          : "Export abgebrochen.";
+      };
+
       function nz(x) {
         return Math.abs(x) < 0.005;
       }
@@ -2173,6 +3134,7 @@
       $("hbl").checked = !!S.leer;
       render();
       renderPresets();
+      thInit();
       view(S.view || "bil");
     </script>
   </body>
