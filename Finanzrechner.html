@@ -1,0 +1,2179 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Finanzrechner</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:wght@500;600&display=swap" />
+    <style>
+      :root {
+        --bg: #edf1f0;
+        --card: #fff;
+        --ink: #14262b;
+        --mute: #5b6e72;
+        --line: #c9d4d3;
+        --acc: #0e6f6a;
+        --acc-ink: #fff;
+        --bad: #a8321f;
+        --ok: #1c7a43;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0f1a1c;
+          --card: #16252a;
+          --ink: #e6eeec;
+          --mute: #92a7a9;
+          --line: #2c4146;
+          --acc: #4fc1b8;
+          --acc-ink: #07201e;
+          --bad: #ff8a73;
+          --ok: #6fd39a;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #0f1a1c;
+        --card: #16252a;
+        --ink: #e6eeec;
+        --mute: #92a7a9;
+        --line: #2c4146;
+        --acc: #4fc1b8;
+        --acc-ink: #07201e;
+        --bad: #ff8a73;
+        --ok: #6fd39a;
+        color-scheme: dark;
+      }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          15px/1.5 "IBM Plex Sans",
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 20px 16px 48px;
+      }
+      h1,
+      h2 {
+        font-family: Newsreader, Georgia, serif;
+        font-weight: 600;
+        margin: 0;
+      }
+      h1 {
+        font-size: 34px;
+        letter-spacing: -0.01em;
+      }
+      h2 {
+        font-size: 22px;
+        margin-bottom: 10px;
+      }
+      .sub {
+        color: var(--mute);
+        margin: 4px 0 22px;
+        max-width: 60ch;
+      }
+      section {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 18px;
+        margin-bottom: 18px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: 13px;
+        color: var(--mute);
+        flex: 1 1 150px;
+      }
+      input,
+      select,
+      button {
+        font: inherit;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 8px 10px;
+        min-width: 0;
+      }
+      input:focus-visible,
+      select:focus-visible,
+      button:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 1px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button.pri {
+        background: var(--acc);
+        color: var(--acc-ink);
+        border-color: var(--acc);
+        font-weight: 600;
+      }
+      button.lnk {
+        border: 0;
+        background: none;
+        color: var(--mute);
+        padding: 2px 6px;
+      }
+      .msg {
+        min-height: 20px;
+        margin: 8px 0 0;
+        font-size: 13px;
+        color: var(--bad);
+      }
+      .tw {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        font-weight: 500;
+        color: var(--mute);
+        font-size: 13px;
+      }
+      .n {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .empty {
+        color: var(--mute);
+        padding: 8px 0;
+      }
+      .t {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid var(--ink);
+        border-radius: 4px;
+      }
+      .t > div {
+        padding: 12px 14px;
+      }
+      .t > div + div {
+        border-left: 3px solid var(--ink);
+      }
+      .t h3 {
+        margin: 0 0 6px;
+        font:
+          600 17px Newsreader,
+          Georgia,
+          serif;
+      }
+      .g {
+        margin: 12px 0 2px;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--acc);
+      }
+      .r {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 2px 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .r small {
+        color: var(--mute);
+      }
+      .tot {
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid var(--ink);
+        margin-top: 10px;
+        padding-top: 6px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .chk {
+        margin-top: 10px;
+        font-size: 13px;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .bad {
+        color: var(--bad);
+      }
+      details summary {
+        cursor: pointer;
+        color: var(--mute);
+        margin-top: 12px;
+      }
+      .lz {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+      @media (max-width: 640px) {
+        .t {
+          grid-template-columns: 1fr;
+        }
+        .t > div + div {
+          border-left: 0;
+          border-top: 3px solid var(--ink);
+        }
+      }
+      :root {
+        --bg: #f3f4f6;
+        --card: #fff;
+        --ink: #1d2125;
+        --mute: #6b7280;
+        --line: #dfe2e6;
+        --acc: #2e7d5b;
+        --acc-ink: #fff;
+        --ok: #2e9a2e;
+        --bad: #e53935;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #111315;
+          --card: #1b1e22;
+          --ink: #e8eaed;
+          --mute: #9aa0a6;
+          --line: #33373d;
+          --acc: #2e7d5b;
+          --acc-ink: #fff;
+          --ok: #4cc24c;
+          --bad: #ff6b66;
+        }
+        section {
+          box-shadow: none !important;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #111315;
+        --card: #1b1e22;
+        --ink: #e8eaed;
+        --mute: #9aa0a6;
+        --line: #33373d;
+        --acc: #2e7d5b;
+        --acc-ink: #fff;
+        --ok: #4cc24c;
+        --bad: #ff6b66;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Arial,
+          sans-serif;
+        font-size: 16px;
+        line-height: 1.4;
+        padding: 16px;
+        max-width: 1200px;
+        margin-inline: auto;
+      }
+      main {
+        max-width: none;
+        padding: 0;
+      }
+      h1,
+      h2 {
+        font-family: inherit;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+      .sub {
+        font-size: 0.9rem;
+      }
+      section {
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      input,
+      select,
+      button {
+        border-radius: 8px;
+        background: var(--card);
+        font: inherit;
+      }
+      input,
+      select {
+        padding: 6px 8px;
+      }
+      button {
+        padding: 6px 12px;
+        font-size: 0.88rem;
+      }
+      button:hover {
+        border-color: var(--acc);
+      }
+      button.pri {
+        background: var(--acc);
+        border-color: var(--acc);
+        color: #fff;
+      }
+      button.lnk {
+        border: 0;
+        background: none;
+        padding: 2px 6px;
+        color: var(--bad);
+      }
+      label {
+        font-size: 0.8rem;
+      }
+      th,
+      td {
+        font-size: 0.9rem;
+      }
+      th {
+        font-weight: 600;
+      }
+      details {
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+        margin-top: 14px;
+      }
+      details summary {
+        color: var(--ink);
+        font-weight: 600;
+        margin-top: 0;
+      }
+      .t {
+        gap: 12px;
+        border: 0;
+      }
+      .t > div {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--bg);
+      }
+      .t > div + div {
+        border-left: 1px solid var(--line);
+      }
+      .t h3 {
+        font:
+          700 1rem system-ui,
+          sans-serif;
+      }
+      .tot {
+        border-top: 1px solid var(--line);
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .tl {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        background: var(--bg);
+      }
+      .tl span {
+        display: block;
+        color: var(--mute);
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      .tl b {
+        display: block;
+        font-size: 1.35rem;
+        margin: 2px 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .tl small {
+        color: var(--mute);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 0 0 8px;
+      }
+      .chip {
+        border: 1px solid var(--line);
+        background: var(--card);
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 0.85rem;
+      }
+      .chip.on {
+        background: var(--acc);
+        border-color: var(--acc);
+        color: #fff;
+      }
+      .vbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        margin: 0 0 10px;
+        padding-bottom: 8px;
+      }
+      .vt {
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 3px 10px;
+        color: var(--mute);
+        font-size: 0.9rem;
+        background: none;
+      }
+      .vt.on {
+        background: var(--bg);
+        color: var(--ink);
+        border-color: var(--line);
+        font-weight: 600;
+      }
+      @media (max-width: 640px) {
+        .t > div + div {
+          border-top: 1px solid var(--line);
+        }
+      }
+      .pl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .pl small {
+        color: var(--mute);
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 210px 1fr;
+        gap: 16px;
+        align-items: start;
+      }
+      #nav {
+        position: sticky;
+        top: 16px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .nb {
+        border: 1px solid transparent;
+        background: none;
+        border-radius: 8px;
+        padding: 8px 12px;
+        text-align: left;
+        color: var(--mute);
+        font-size: 0.95rem;
+      }
+      .nb:hover {
+        border-color: var(--line);
+      }
+      .nb.on {
+        background: var(--acc);
+        border-color: var(--acc);
+        color: #fff;
+        font-weight: 600;
+      }
+      @media (max-width: 760px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        #nav {
+          position: static;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+      }
+      section[hidden] {
+        display: none;
+      }
+      .ib {
+        background: none;
+        border: none;
+        color: var(--mute);
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        padding: 0;
+      }
+      .ib:hover {
+        background: var(--bg);
+      }
+      .ib.x {
+        color: var(--bad);
+      }
+      .ib.ask {
+        background: var(--bad);
+        color: #fff;
+        width: auto;
+        padding: 0 8px;
+        font-size: 0.75rem;
+      }
+      #modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        z-index: 50;
+      }
+      #modal.open {
+        display: flex;
+      }
+      .md {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px;
+        width: 100%;
+        max-width: 440px;
+        max-height: 85vh;
+        overflow: auto;
+      }
+      .md h3 {
+        margin: 0 0 10px;
+        font-size: 1.05rem;
+      }
+      .md label.fl {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--mute);
+      }
+      .md label.fl input {
+        display: block;
+        width: 100%;
+        margin-top: 4px;
+      }
+      .md p label {
+        flex-direction: row;
+        gap: 6px;
+        align-items: center;
+        font-size: 0.9rem;
+        color: var(--ink);
+      }
+      .mbtns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 14px;
+      }
+      input[type="checkbox"] {
+        accent-color: var(--acc);
+      }
+      .app {
+        display: block;
+        padding-left: 64px;
+      }
+      #nav {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        height: 100dvh;
+        width: 56px;
+        z-index: 20;
+        overflow: hidden;
+        border-radius: 0 14px 14px 0;
+        border-left: 0;
+        padding: calc(12px + env(safe-area-inset-top, 0px)) 8px 12px;
+        transition: width 0.18s ease;
+        gap: 6px;
+      }
+      #nav:hover,
+      #nav:focus-within {
+        width: 290px;
+        box-shadow: 4px 0 16px rgba(0, 0, 0, 0.12);
+      }
+      .nb {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        white-space: nowrap;
+        padding: 8px;
+        min-height: 40px;
+      }
+      .nb .ic {
+        flex: 0 0 24px;
+        text-align: center;
+        font-size: 1.1rem;
+      }
+      .nb .lb {
+        opacity: 0;
+        transition: opacity 0.12s;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #nav:hover .lb,
+      #nav:focus-within .lb {
+        opacity: 1;
+      }
+      @media (max-width: 760px) {
+        .app {
+          padding-left: 0;
+        }
+        #nav {
+          position: static;
+          width: auto;
+          height: auto;
+          flex-direction: row;
+          flex-wrap: wrap;
+          border: 1px solid var(--line);
+          border-radius: 14px;
+          padding: 10px;
+          margin-bottom: 16px;
+        }
+        #nav:hover,
+        #nav:focus-within {
+          width: auto;
+          box-shadow: none;
+        }
+        .nb .lb {
+          opacity: 1;
+        }
+      }
+      .kf,
+      .tk {
+        border-collapse: collapse;
+        width: 100%;
+        background: var(--card);
+      }
+      .kf th,
+      .kf td,
+      .tk th,
+      .tk td {
+        border: 1px solid var(--line);
+        padding: 8px 10px;
+        font-size: 0.9rem;
+        text-align: left;
+        vertical-align: middle;
+      }
+      .kf th.ttl,
+      .tk th.tn {
+        background: #8a8f94;
+        color: #fff;
+        font-weight: 700;
+        text-align: center;
+        font-size: 0.95rem;
+      }
+      .kf tr.hd th {
+        font-weight: 700;
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+      .kf .n,
+      .tk .n {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .kf .gh,
+      .kf .bd {
+        font-weight: 700;
+      }
+      .kf .band {
+        background: var(--line);
+        color: var(--ink);
+      }
+      .kf .rs {
+        border-left: 2px solid var(--ink);
+      }
+      .kf .ul {
+        border-bottom: 2px solid var(--ink);
+      }
+      .kf .dbl,
+      .tk .dbl {
+        border-top: 2px solid var(--ink);
+        border-bottom: 4px double var(--ink);
+        font-weight: 700;
+      }
+      .kf small {
+        color: var(--mute);
+      }
+      .tk tr.sh th {
+        color: var(--mute);
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 4px 10px;
+      }
+      .hbg {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px;
+        align-items: start;
+      }
+      .gk {
+        color: var(--mute);
+        font-size: 0.75rem;
+        margin-right: 6px;
+      }
+      .ck {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: var(--ink);
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <nav id="nav">
+        <button class="nb on" data-v="bil" title="Bilanz und Erfolgsrechnung">
+          <span class="ic">⚖</span
+          ><span class="lb">Bilanz und Erfolgsrechnung</span>
+        </button>
+        <button class="nb" data-v="gf" title="Geschäftsfälle">
+          <span class="ic">✎</span><span class="lb">Geschäftsfälle</span>
+        </button>
+        <button class="nb" data-v="hb" title="Hauptbuch">
+          <span class="ic">▤</span><span class="lb">Hauptbuch</span>
+        </button>
+        <button class="nb" data-v="kv" title="Kontenverwaltung">
+          <span class="ic">⚙</span><span class="lb">Kontenverwaltung</span>
+        </button>
+      </nav>
+      <main>
+        <h1>Finanzrechner</h1>
+        <p class="sub">
+          Geschäftsfälle verbuchen, Bilanz und Erfolgsrechnung entstehen
+          automatisch. Kontenplan nach KMU-Kontenrahmen.
+        </p>
+
+        <section data-v="kv">
+          <h2>Einstellungen</h2>
+          <div class="row">
+            <label
+              >Fremdkapital ist langfristig ab (Monate)<input
+                id="limFK"
+                type="number"
+                min="0"
+                value="12"
+            /></label>
+            <label
+              >Aktivum ist Anlagevermögen ab (Monate)<input
+                id="limAV"
+                type="number"
+                min="0"
+                value="12"
+            /></label>
+            <label style="flex: 2 1 220px"
+              >Firma (für die Titel)<input
+                id="firma"
+                type="text"
+                maxlength="40"
+            /></label>
+          </div>
+          <details>
+            <summary>
+              Laufzeit pro Konto (Monate ab Beginn des ersten Jahres)
+            </summary>
+            <div class="lz" id="lz"></div>
+          </details>
+        </section>
+
+        <section data-v="bil gf hb">
+          <h2>Zeitraum</h2>
+          <div class="row">
+            <div class="vbar" id="ybar" style="flex: 1 1 100%"></div>
+            <div class="chips" id="mch" style="flex: 1 1 100%"></div>
+            <select id="jahr" hidden></select
+            ><select id="mon" hidden></select>
+            <label style="flex: 0 1 120px"
+              >Neues Jahr<input id="ny" type="number" min="1900" max="2200"
+            /></label>
+            <button id="addy">Jahr hinzufügen</button>
+          </div>
+          <p class="sub" style="margin: 8px 0 0">
+            Jeder Monat hat 30 Tage, ein Jahr hat 360 Tage. Die Bilanz zeigt den
+            Stand am Ende des Zeitraums, die Erfolgsrechnung nur den gewählten
+            Zeitraum.
+          </p>
+        </section>
+
+        <section data-v="gf">
+          <h2>Geschäftsfall erfassen</h2>
+          <div class="row">
+            <label style="flex: 2 1 220px"
+              >Geschäftsfall<input id="txt" placeholder="z. B. Miete bezahlt"
+            /></label>
+            <label>Soll<select id="soll"></select></label>
+            <label>Haben<select id="haben"></select></label>
+            <label style="flex: 0 1 110px"
+              >Monat<select id="bm"></select
+            ></label>
+            <label style="flex: 0 1 70px"
+              >Tag<input id="bd" type="number" min="1" max="30" value="1"
+            /></label>
+            <label style="flex: 0 1 130px"
+              >Betrag (CHF)<input id="bet" type="number" min="0" step="0.05"
+            /></label>
+            <button class="pri" id="buch">Buchen</button>
+          </div>
+          <p class="msg" id="msg" role="alert"></p>
+          <p class="sub" style="margin: 0">
+            Anfangsbestände buchst du gegen 9100 Eröffnungsbilanz: Aktiven im
+            Soll, Passiven im Haben.
+          </p>
+        </section>
+
+        <section data-v="kv">
+          <h2>Konten verwalten</h2>
+          <div class="row">
+            <label style="flex: 0 1 100px"
+              >Nr.<input id="kn" maxlength="6"
+            /></label>
+            <label style="flex: 2 1 200px">Name<input id="kt" /></label>
+            <label
+              >Typ<select id="ktyp">
+                <option value="UV">Aktiv, Umlaufvermögen</option>
+                <option value="FA">Aktiv mit Laufzeit</option>
+                <option value="KFK">Passiv, kurzfristig</option>
+                <option value="LFK">Passiv, langfristig</option>
+                <option value="FP">Passiv mit Laufzeit</option>
+                <option value="EK">Eigenkapital</option>
+                <option value="E">Ertrag</option>
+                <option value="A">Aufwand</option>
+              </select></label
+            >
+            <label style="flex: 0 1 120px"
+              >Laufzeit (Monate)<input id="kl" type="number" min="0" value="12"
+            /></label>
+            <button class="pri" id="kadd">Konto hinzufügen</button>
+          </div>
+          <p class="msg" id="kmsg" role="alert"></p>
+          <p class="sub" style="margin: 0">
+            Die Laufzeit gilt nur für Konten mit Laufzeit. Ein Konto, das in
+            Buchungen vorkommt, kannst du erst löschen, wenn du diese Buchungen
+            gelöscht hast.
+          </p>
+          <details open>
+            <summary>Alle Konten</summary>
+            <div class="tw">
+              <table>
+                <tbody id="kl2"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+
+        <section data-v="kv">
+          <h2>Presets</h2>
+          <p class="sub">
+            Ein Preset enthält Konten, Laufzeiten und die Einstellungen
+            (langfristig ab, Anlagevermögen ab), auf Wunsch auch die Buchungen.
+            Jedes Preset hat einen Namen.
+          </p>
+          <div class="row">
+            <button class="pri" id="pSave">Aktuelles Preset speichern</button>
+            <button id="pFile">Datei laden</button>
+            <button id="pDir">Ordner wählen</button>
+          </div>
+          <input
+            type="file"
+            id="fileIn"
+            accept=".json,application/json"
+            multiple
+            hidden />
+          <input type="file" id="dirIn" webkitdirectory multiple hidden />
+          <p class="sub" id="pmsg" role="status" style="margin: 8px 0"></p>
+          <div id="plist"></div>
+        </section>
+
+        <section data-v="hb">
+          <h2>Hauptbuch</h2>
+          <label class="ck"
+            ><input type="checkbox" id="hbl" /> Auch Konten ohne Buchungen
+            anzeigen</label
+          >
+          <div id="hbv"></div>
+        </section>
+
+        <section data-v="gf">
+          <h2>Journal</h2>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nr.</th>
+                  <th>Datum</th>
+                  <th>Geschäftsfall</th>
+                  <th>Soll</th>
+                  <th>Haben</th>
+                  <th class="n">Betrag</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="jb"></tbody>
+            </table>
+          </div>
+          <div class="row" style="margin-top: 10px">
+            <button id="bsp">Beispiel laden</button
+            ><button id="clr">Alles löschen</button>
+          </div>
+        </section>
+
+        <section data-v="bil">
+          <h2>Bilanz</h2>
+          <div id="bil"></div>
+        </section>
+
+        <section data-v="bil">
+          <h2>Erfolgsrechnung</h2>
+          <div id="er"></div>
+        </section>
+      </main>
+    </div>
+    <div id="modal"></div>
+
+    <script>
+      var KONTEN = [
+        ["1000", "Kasse", "UV"],
+        ["1020", "Bank", "UV"],
+        ["1060", "Wertschriften", "FA", 6],
+        ["1100", "Forderungen aus L+L", "UV"],
+        ["1170", "Vorsteuer", "UV"],
+        ["1200", "Handelswaren", "UV"],
+        ["1300", "Aktive Rechnungsabgrenzung", "UV"],
+        ["1440", "Darlehensforderungen", "FA", 36],
+        ["1500", "Maschinen und Apparate", "FA", 60],
+        ["1510", "Mobiliar und Einrichtungen", "FA", 96],
+        ["1520", "Büromaschinen und IT", "FA", 36],
+        ["1530", "Fahrzeuge", "FA", 60],
+        ["1600", "Immobilien", "FA", 240],
+        ["2000", "Verbindlichkeiten aus L+L", "KFK"],
+        ["2100", "Bankverbindlichkeiten", "FP", 6],
+        ["2200", "Geschuldete MWST", "KFK"],
+        ["2300", "Passive Rechnungsabgrenzung", "KFK"],
+        ["2400", "Darlehensschulden", "FP", 36],
+        ["2420", "Hypothek", "FP", 240],
+        ["2800", "Eigenkapital", "EK"],
+        ["3200", "Handelserlöse", "E"],
+        ["3400", "Dienstleistungserlöse", "E"],
+        ["3600", "Übrige Erlöse", "E"],
+        ["6950", "Finanzertrag", "E"],
+        ["8100", "Betriebsfremder Ertrag", "E"],
+        ["4200", "Warenaufwand", "A"],
+        ["5000", "Lohnaufwand", "A"],
+        ["5700", "Sozialversicherungsaufwand", "A"],
+        ["6000", "Raumaufwand", "A"],
+        ["6100", "Unterhalt und Reparaturen", "A"],
+        ["6200", "Fahrzeugaufwand", "A"],
+        ["6300", "Versicherungen", "A"],
+        ["6400", "Energie und Entsorgung", "A"],
+        ["6500", "Verwaltungsaufwand", "A"],
+        ["6600", "Werbeaufwand", "A"],
+        ["6800", "Abschreibungen", "A"],
+        ["6900", "Finanzaufwand", "A"],
+        ["8000", "Betriebsfremder Aufwand", "A"],
+        ["9100", "Eröffnungsbilanz", "X"],
+      ];
+      var MN = [
+        "Januar",
+        "Februar",
+        "März",
+        "April",
+        "Mai",
+        "Juni",
+        "Juli",
+        "August",
+        "September",
+        "Oktober",
+        "November",
+        "Dezember",
+      ];
+      var MAP = {},
+        LZ = {},
+        END = 0,
+        BASE = 0,
+        S = { entries: [], fk: 12, av: 12, years: [2026], y: 2026, m: 0 };
+      function rebuild() {
+        MAP = {};
+        LZ = {};
+        KONTEN.forEach(function (k) {
+          MAP[k[0]] = k;
+          if (k[3] != null) LZ[k[0]] = k[3];
+        });
+      }
+      rebuild();
+      var GR = {
+        A: "Aktiven",
+        P: "Passiven",
+        E: "Ertrag",
+        W: "Aufwand",
+        X: "Eröffnung",
+      };
+      function side(t) {
+        return t == "UV" || t == "FA"
+          ? "A"
+          : t == "KFK" || t == "FP" || t == "EK" || t == "LFK"
+            ? "P"
+            : t == "E"
+              ? "E"
+              : t == "A"
+                ? "W"
+                : "X";
+      }
+      function $(i) {
+        return document.getElementById(i);
+      }
+      function esc(s) {
+        var d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+      }
+      function fmt(n) {
+        return n.toLocaleString("de-CH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      }
+      function name(nr) {
+        return nr + " " + MAP[nr][1];
+      }
+      function save() {
+        try {
+          localStorage.setItem(
+            "fr1",
+            JSON.stringify({ S: S, LZ: LZ, K: KONTEN }),
+          );
+        } catch (e) {}
+      }
+      function load() {
+        try {
+          var v = JSON.parse(localStorage.getItem("fr1"));
+          if (v) {
+            S = v.S;
+            if (v.K) {
+              KONTEN = v.K;
+              rebuild();
+            }
+            for (var k in v.LZ) if (MAP[k]) LZ[k] = v.LZ[k];
+          }
+        } catch (e) {}
+      }
+
+      function opts() {
+        var h = "";
+        ["A", "P", "E", "W", "X"].forEach(function (g) {
+          h += '<optgroup label="' + GR[g] + '">';
+          KONTEN.forEach(function (k) {
+            if (side(k[2]) == g)
+              h +=
+                '<option value="' + k[0] + '">' + esc(name(k[0])) + "</option>";
+          });
+          h += "</optgroup>";
+        });
+        $("soll").innerHTML = h;
+        $("haben").innerHTML = h;
+        if (MAP["1020"]) $("haben").value = "1020";
+      }
+      function lzUi() {
+        var h = "";
+        KONTEN.forEach(function (k) {
+          if (LZ[k[0]] != null)
+            h +=
+              "<label>" +
+              esc(name(k[0])) +
+              ' (Monate)<input type="number" min="0" data-k="' +
+              k[0] +
+              '" value="' +
+              LZ[k[0]] +
+              '"></label>';
+        });
+        $("lz").innerHTML = h;
+        $("lz").oninput = function (e) {
+          var k = e.target.dataset.k;
+          if (k) {
+            LZ[k] = Number(e.target.value) || 0;
+            render();
+          }
+        };
+      }
+      function rest(k) {
+        return LZ[k[0]] * 30 - (END - BASE);
+      }
+      function klass(k) {
+        var t = k[2];
+        if (t == "FA") return rest(k) > S.av * 30 ? "AV" : "UV";
+        if (t == "FP") return rest(k) > S.fk * 30 ? "LFK" : "KFK";
+        return t;
+      }
+      function row(k, v) {
+        var lz =
+          LZ[k[0]] != null
+            ? " <small>(" +
+              (rest(k) > 0
+                ? "Rest " + Math.round(rest(k) / 3) / 10 + " Mt."
+                : "fällig") +
+              ")</small>"
+            : "";
+        return (
+          '<div class="r"><span>' +
+          esc(name(k[0])) +
+          lz +
+          "</span><span>" +
+          fmt(v) +
+          "</span></div>"
+        );
+      }
+      function render() {
+        var sal = {},
+          sp = {};
+        BASE = S.years[0] * 360;
+        END = S.y * 360 + (S.m || 12) * 30;
+        var ST = S.m ? S.y * 360 + (S.m - 1) * 30 : S.y * 360;
+        KONTEN.forEach(function (k) {
+          sal[k[0]] = 0;
+          sp[k[0]] = 0;
+        });
+        S.entries.forEach(function (e) {
+          var ti = e.y * 360 + (e.m - 1) * 30 + e.d;
+          if (ti > END) return;
+          sal[e.s] += e.b;
+          sal[e.h] -= e.b;
+          if (ti > ST) {
+            sp[e.s] += e.b;
+            sp[e.h] -= e.b;
+          }
+        });
+        var gewK = 0;
+        KONTEN.forEach(function (k) {
+          var s = side(k[2]);
+          if (s == "E" || s == "W") gewK -= sal[k[0]];
+        });
+        var lab = S.m ? MN[S.m - 1] + " " + S.y : "Jahr " + S.y;
+        /* Journal */
+        var jh = "";
+        S.entries.forEach(function (e, i) {
+          jh +=
+            "<tr><td>" +
+            (i + 1) +
+            "</td><td>" +
+            e.d +
+            ". " +
+            MN[e.m - 1].slice(0, 3) +
+            " " +
+            e.y +
+            "</td><td>" +
+            esc(e.t || "–") +
+            "</td><td>" +
+            esc(name(e.s)) +
+            "</td><td>" +
+            esc(name(e.h)) +
+            '</td><td class="n">' +
+            fmt(e.b) +
+            '</td><td><button class="lnk" data-d="' +
+            i +
+            '" aria-label="Buchung löschen">Löschen</button></td></tr>';
+        });
+        $("jb").innerHTML =
+          jh ||
+          '<tr><td colspan="7" class="empty">Noch keine Buchungen. Erfasse den ersten Geschäftsfall oder lade das Beispiel.</td></tr>';
+        /* Erfolgsrechnung */
+        var ert = 0,
+          auf = 0,
+          EA = { b: [], n: [] },
+          EE = { b: [], n: [] };
+        KONTEN.forEach(function (k) {
+          var s = side(k[2]),
+            v = sp[k[0]];
+          if (nz(v) || (s != "E" && s != "W")) return;
+          var g = isNeutral(k) ? "n" : "b";
+          if (s == "E") {
+            v = -v;
+            ert += v;
+            EE[g].push({ n: esc(name(k[0])), v: v });
+          } else {
+            auf += v;
+            EA[g].push({ n: esc(name(k[0])), v: v });
+          }
+        });
+        var gew = ert - auf,
+          tot = Math.max(auf, ert);
+        function eList(X, res) {
+          var o = [{ h: "Betrieblicher Bereich" }].concat(X.b);
+          if (X.n.length) {
+            o.push({ h: "Neutraler Bereich" });
+            o = o.concat(X.n);
+          }
+          if (res) o.push(res);
+          return o;
+        }
+        function eRow(r, c) {
+          if (r.h)
+            return '<td colspan="2" class="band ' + c + '">' + r.h + "</td>";
+          if (r.e) return '<td class="' + c + '"></td><td></td>';
+          return (
+            '<td class="' +
+            c +
+            (r.bd ? " bd" : "") +
+            '">' +
+            r.n +
+            '</td><td class="n' +
+            (r.bd ? " bd" : "") +
+            '">' +
+            fmt(r.v) +
+            "</td>"
+          );
+        }
+        var LA = eList(EA, gew > 0.004 ? { n: "Gewinn", v: gew, bd: 1 } : null),
+          RA = eList(
+            EE,
+            gew < -0.004 ? { n: "Verlust", v: -gew, bd: 1 } : null,
+          );
+        while (LA.length < RA.length) LA.push({ e: 1 });
+        while (RA.length < LA.length) RA.push({ e: 1 });
+        var fa = S.firma ? " " + esc(S.firma) : "";
+        var eh =
+          '<tr><th class="ttl" colspan="4">Erfolgsrechnung' +
+          fa +
+          " für " +
+          esc(S.m ? MN[S.m - 1] + " " + S.y : String(S.y)) +
+          '</th></tr><tr class="hd"><th colspan="2">Aufwand</th><th colspan="2" class="rs n">Ertrag</th></tr>';
+        for (var i = 0; i < LA.length; i++)
+          eh += "<tr>" + eRow(LA[i], "") + eRow(RA[i], "rs") + "</tr>";
+        eh +=
+          '<tr><td></td><td class="n dbl">' +
+          fmt(tot) +
+          '</td><td class="rs"></td><td class="n dbl">' +
+          fmt(tot) +
+          "</td></tr>";
+        $("er").innerHTML =
+          '<p class="chk">' +
+          esc(lab) +
+          " (" +
+          (S.m ? "30" : "360") +
+          ' Tage)</p><div class="tiles">' +
+          tl("Ertrag", fmt(ert)) +
+          tl("Aufwand", fmt(auf)) +
+          tl(
+            gew >= 0 ? "Gewinn" : "Verlust",
+            fmt(Math.abs(gew)),
+            gew >= 0 ? "ok" : "bad",
+          ) +
+          '</div><div class="tw"><table class="kf">' +
+          eh +
+          "</table></div>";
+        /* Bilanz */
+        function nm(k) {
+          var l =
+            LZ[k[0]] != null
+              ? " <small>(" +
+                (rest(k) > 0
+                  ? "Rest " + Math.round(rest(k) / 3) / 10 + " Mt."
+                  : "fällig") +
+                ")</small>"
+              : "";
+          return esc(name(k[0])) + l;
+        }
+        var G = { UV: [], AV: [], KFK: [], LFK: [], EK: [] },
+          T = { UV: 0, AV: 0, KFK: 0, LFK: 0, EK: 0 };
+        KONTEN.forEach(function (k) {
+          var s = side(k[2]),
+            v = sal[k[0]];
+          if ((s != "A" && s != "P") || nz(v)) return;
+          if (s == "P") v = -v;
+          var c = klass(k);
+          G[c].push({ n: nm(k), v: v });
+          T[c] += v;
+        });
+        var ek = T.EK + gewK,
+          akt = T.UV + T.AV,
+          pas = T.KFK + T.LFK + ek;
+        if (!nz(gewK))
+          G.EK.push({
+            n: gewK >= 0 ? "Jahresgewinn" : "Jahresverlust",
+            v: gewK,
+          });
+        function bList(gs) {
+          var o = [];
+          gs.forEach(function (g) {
+            o.push({ h: g[0] });
+            g[1].forEach(function (it, i) {
+              var last = i == g[1].length - 1;
+              o.push({ n: it.n, v: it.v, o: last ? g[2] : null, ul: last });
+            });
+          });
+          return o;
+        }
+        function bRow(r, c) {
+          if (r.h)
+            return '<td colspan="3" class="gh ' + c + '">' + r.h + "</td>";
+          if (r.e) return '<td class="' + c + '"></td><td></td><td></td>';
+          return (
+            '<td class="' +
+            c +
+            '">' +
+            r.n +
+            '</td><td class="n' +
+            (r.ul ? " ul" : "") +
+            '">' +
+            fmt(r.v) +
+            '</td><td class="n">' +
+            (r.o != null ? fmt(r.o) : "") +
+            "</td>"
+          );
+        }
+        var BL = bList([
+            ["Umlaufvermögen", G.UV, T.UV],
+            ["Anlagevermögen", G.AV, T.AV],
+          ]),
+          BR = bList([
+            ["Kurzfristiges Fremdkapital", G.KFK, T.KFK],
+            ["Langfristiges Fremdkapital", G.LFK, T.LFK],
+            ["Eigenkapital", G.EK, ek],
+          ]);
+        while (BL.length < BR.length) BL.push({ e: 1 });
+        while (BR.length < BL.length) BR.push({ e: 1 });
+        var bh =
+          '<tr><th class="ttl" colspan="6">Bilanz' +
+          fa +
+          " per " +
+          endStr() +
+          ' (in Kontenform)</th></tr><tr class="hd"><th colspan="3">Aktiven</th><th colspan="3" class="rs n">Passiven</th></tr>';
+        for (var j = 0; j < BL.length; j++)
+          bh += "<tr>" + bRow(BL[j], "") + bRow(BR[j], "rs") + "</tr>";
+        bh +=
+          '<tr><td></td><td></td><td class="n dbl">' +
+          fmt(akt) +
+          '</td><td class="rs"></td><td></td><td class="n dbl">' +
+          fmt(pas) +
+          "</td></tr>";
+        var diff = akt - pas;
+        $("bil").innerHTML =
+          '<p class="chk">Stand am Ende von ' +
+          esc(lab) +
+          '</p><div class="tiles">' +
+          tl("Total Aktiven", fmt(akt)) +
+          tl("Total Passiven", fmt(pas)) +
+          tl(
+            (gewK >= 0 ? "Gewinn" : "Verlust") + " (kumuliert)",
+            fmt(gewK),
+            gewK >= 0 ? "ok" : "bad",
+          ) +
+          '</div><div class="tw"><table class="kf">' +
+          bh +
+          "</table></div>" +
+          '<p class="chk ' +
+          (Math.abs(diff) < 0.005 ? "ok" : "bad") +
+          '">' +
+          (Math.abs(diff) < 0.005
+            ? "Die Bilanz geht auf."
+            : "Die Bilanz geht nicht auf. Differenz: " +
+              fmt(diff) +
+              " CHF. Prüfe, ob die Anfangsbestände gegen 9100 gebucht sind.") +
+          "</p>";
+        hbRender(ST, END);
+        save();
+      }
+      function buchen() {
+        var s = $("soll").value,
+          h = $("haben").value,
+          b = parseFloat($("bet").value),
+          m = $("msg");
+        if (!MAP[s] || !MAP[h]) {
+          m.textContent = "Wähle ein Soll- und ein Haben-Konto aus.";
+          return;
+        }
+        if (s == h) {
+          m.textContent = "Soll und Haben müssen verschiedene Konten sein.";
+          return;
+        }
+        if (!(b > 0)) {
+          m.textContent = "Gib einen Betrag grösser als 0 ein.";
+          return;
+        }
+        m.textContent = "";
+        S.entries.push({
+          s: s,
+          h: h,
+          b: Math.round(b * 100) / 100,
+          t: $("txt").value.trim(),
+          y: S.y,
+          m: Number($("bm").value),
+          d: Math.min(30, Math.max(1, Math.round(Number($("bd").value)) || 1)),
+        });
+        $("txt").value = "";
+        $("bet").value = "";
+        $("txt").focus();
+        render();
+      }
+      $("buch").onclick = buchen;
+      $("bet").onkeydown = $("txt").onkeydown = function (e) {
+        if (e.key == "Enter") buchen();
+      };
+      $("jb").onclick = function (e) {
+        var d = e.target.dataset.d;
+        if (d != null) {
+          S.entries.splice(Number(d), 1);
+          render();
+        }
+      };
+      $("limFK").oninput = function () {
+        S.fk = Number(this.value) || 0;
+        render();
+      };
+      $("limAV").oninput = function () {
+        S.av = Number(this.value) || 0;
+        render();
+      };
+      $("clr").onclick = function () {
+        S.entries = [];
+        render();
+      };
+      $("bsp").onclick = function () {
+        var B = [
+          ["Eröffnung Bank", "1020", "9100", 40000],
+          ["Eröffnung Maschinen", "1500", "9100", 60000],
+          ["Eröffnung Hypothek", "9100", "2420", 50000],
+          ["Eröffnung Darlehen", "9100", "2400", 20000],
+          ["Eröffnung Eigenkapital", "9100", "2800", 30000],
+          ["Dienstleistung auf Rechnung", "1100", "3400", 25000],
+          ["Materialeinkauf auf Rechnung", "4200", "2000", 4000],
+          ["Lohn bezahlt", "5000", "1020", 12000],
+          ["Miete bezahlt", "6000", "1020", 3000],
+          ["Abschreibung Maschinen", "6800", "1500", 6000],
+          ["Hypothekarzins bezahlt", "6900", "1020", 1000],
+        ];
+        S.entries = B.map(function (x, i) {
+          return {
+            t: x[0],
+            s: x[1],
+            h: x[2],
+            b: x[3],
+            y: S.years[0],
+            m: i < 5 ? 1 : i - 3,
+            d: i < 5 ? 1 : 15,
+          };
+        });
+        S.y = S.years[0];
+        S.m = 0;
+        zeit();
+        render();
+      };
+      function zeit() {
+        S.years.sort(function (a, b) {
+          return a - b;
+        });
+        $("jahr").innerHTML = S.years
+          .map(function (y) {
+            return "<option>" + y + "</option>";
+          })
+          .join("");
+        $("jahr").value = S.y;
+        var mo = MN.map(function (n, i) {
+          return '<option value="' + (i + 1) + '">' + n + "</option>";
+        }).join("");
+        $("mon").innerHTML = '<option value="0">Ganzes Jahr</option>' + mo;
+        $("mon").value = S.m;
+        $("ybar").innerHTML = S.years
+          .map(function (y) {
+            return (
+              '<button class="vt' +
+              (y == S.y ? " on" : "") +
+              '" data-y="' +
+              y +
+              '">' +
+              y +
+              "</button>"
+            );
+          })
+          .join("");
+        $("mch").innerHTML = [
+          '<button class="chip' +
+            (S.m == 0 ? " on" : "") +
+            '" data-m="0">Ganzes Jahr</button>',
+        ]
+          .concat(
+            MN.map(function (n, i) {
+              return (
+                '<button class="chip' +
+                (S.m == i + 1 ? " on" : "") +
+                '" data-m="' +
+                (i + 1) +
+                '">' +
+                n.slice(0, 3) +
+                "</button>"
+              );
+            }),
+          )
+          .join("");
+        var cur = $("bm").value;
+        $("bm").innerHTML = mo;
+        $("bm").value = cur || S.m || 1;
+      }
+      $("jahr").onchange = function () {
+        S.y = Number(this.value);
+        render();
+      };
+      $("mon").onchange = function () {
+        S.m = Number(this.value);
+        if (S.m) $("bm").value = S.m;
+        render();
+      };
+      $("ybar").onclick = function (e) {
+        var y = e.target.dataset.y;
+        if (y) {
+          S.y = Number(y);
+          zeit();
+          render();
+        }
+      };
+      $("mch").onclick = function (e) {
+        var m = e.target.dataset.m;
+        if (m != null) {
+          S.m = Number(m);
+          zeit();
+          if (S.m) $("bm").value = S.m;
+          render();
+        }
+      };
+      $("addy").onclick = function () {
+        var y = parseInt($("ny").value, 10),
+          m = $("msg");
+        if (!(y >= 1900 && y <= 2200)) {
+          m.textContent = "Gib ein Jahr zwischen 1900 und 2200 ein.";
+          return;
+        }
+        m.textContent = "";
+        if (S.years.indexOf(y) < 0) S.years.push(y);
+        S.y = y;
+        $("ny").value = "";
+        zeit();
+        render();
+      };
+      var TL = {
+        UV: "Aktiv, Umlaufvermögen",
+        FA: "Aktiv mit Laufzeit",
+        KFK: "Passiv, kurzfristig",
+        LFK: "Passiv, langfristig",
+        FP: "Passiv mit Laufzeit",
+        EK: "Eigenkapital",
+        E: "Ertrag",
+        A: "Aufwand",
+        X: "Eröffnung",
+      };
+      function kliste() {
+        $("kl2").innerHTML = KONTEN.map(function (k) {
+          return (
+            "<tr><td>" +
+            esc(k[0]) +
+            "</td><td>" +
+            esc(k[1]) +
+            "</td><td>" +
+            TL[k[2]] +
+            "</td><td>" +
+            (k[2] == "X"
+              ? ""
+              : '<button class="lnk" data-kd="' +
+                esc(k[0]) +
+                '">Löschen</button>') +
+            "</td></tr>"
+          );
+        }).join("");
+      }
+      function refresh() {
+        var s = $("soll").value,
+          h = $("haben").value;
+        opts();
+        if (MAP[s]) $("soll").value = s;
+        if (MAP[h]) $("haben").value = h;
+        lzUi();
+        kliste();
+        render();
+      }
+      $("kadd").onclick = function () {
+        var nr = $("kn").value.trim(),
+          nm = $("kt").value.trim(),
+          t = $("ktyp").value,
+          m = $("kmsg");
+        if (!/^[0-9A-Za-z]{1,6}$/.test(nr)) {
+          m.textContent =
+            "Die Kontonummer besteht aus 1 bis 6 Ziffern oder Buchstaben.";
+          return;
+        }
+        if (MAP[nr]) {
+          m.textContent = "Diese Kontonummer gibt es schon.";
+          return;
+        }
+        if (!nm) {
+          m.textContent = "Gib einen Kontonamen ein.";
+          return;
+        }
+        var k = [nr, nm, t];
+        if (t == "FA" || t == "FP") {
+          k.push(Math.max(0, Number($("kl").value) || 0));
+          LZ[nr] = k[3];
+        }
+        MAP[nr] = k;
+        KONTEN.push(k);
+        KONTEN.sort(function (a, b) {
+          return a[0] < b[0] ? -1 : 1;
+        });
+        m.textContent = "";
+        $("kn").value = "";
+        $("kt").value = "";
+        refresh();
+      };
+      $("kl2").onclick = function (e) {
+        var nr = e.target.dataset.kd;
+        if (!nr) return;
+        var m = $("kmsg"),
+          n = S.entries.filter(function (x) {
+            return x.s == nr || x.h == nr;
+          }).length;
+        if (n) {
+          m.textContent =
+            "Konto " +
+            nr +
+            " wird in " +
+            n +
+            " Buchung(en) verwendet. Lösche zuerst diese Buchungen.";
+          return;
+        }
+        m.textContent = "";
+        KONTEN = KONTEN.filter(function (k) {
+          return k[0] != nr;
+        });
+        delete MAP[nr];
+        delete LZ[nr];
+        refresh();
+      };
+      var PKEY = "finanz_presets";
+      function lib() {
+        try {
+          return JSON.parse(localStorage.getItem(PKEY) || "[]");
+        } catch (e) {
+          return [];
+        }
+      }
+      function saveLib(l) {
+        try {
+          localStorage.setItem(PKEY, JSON.stringify(l));
+        } catch (e) {}
+      }
+      function closeM() {
+        var m = $("modal");
+        m.classList.remove("open");
+        m.innerHTML = "";
+      }
+      function modal(title, body, btns) {
+        var m = $("modal");
+        m.innerHTML =
+          '<div class="md"><h3>' +
+          title +
+          "</h3>" +
+          body +
+          '<div class="mbtns"></div></div>';
+        btns.forEach(function (b) {
+          var e = document.createElement("button");
+          e.className = b.cls || "";
+          e.textContent = b.t;
+          e.onclick = function () {
+            if (!b.fn || b.fn() !== false) closeM();
+          };
+          m.querySelector(".mbtns").appendChild(e);
+        });
+        m.classList.add("open");
+        var i = m.querySelector("input[type=text]");
+        if (i) i.focus();
+      }
+      $("modal").onclick = function (e) {
+        if (e.target.id == "modal") closeM();
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key == "Escape") closeM();
+      });
+      function twoStep(b, label, fn) {
+        if (b.dataset.ask) {
+          fn();
+          return;
+        }
+        b.dataset.ask = "1";
+        var old = b.textContent;
+        b.textContent = label;
+        b.classList.add("ask");
+        setTimeout(function () {
+          delete b.dataset.ask;
+          b.textContent = old;
+          b.classList.remove("ask");
+        }, 3000);
+      }
+      function makePreset(name, withE) {
+        var L = {};
+        for (var k in LZ) L[k] = LZ[k];
+        return {
+          format: "finanzrechner-preset",
+          v: 1,
+          name: name,
+          withEntries: withE,
+          fk: S.fk,
+          av: S.av,
+          konten: JSON.parse(JSON.stringify(KONTEN)),
+          laufzeiten: L,
+          years: withE ? S.years.slice() : [],
+          entries: withE ? JSON.parse(JSON.stringify(S.entries)) : [],
+        };
+      }
+      function validPreset(p) {
+        return (
+          !!p &&
+          p.format == "finanzrechner-preset" &&
+          typeof p.name == "string" &&
+          Array.isArray(p.konten) &&
+          p.konten.every(function (k) {
+            return (
+              Array.isArray(k) &&
+              typeof k[0] == "string" &&
+              /^[0-9A-Za-z]{1,6}$/.test(k[0]) &&
+              typeof k[1] == "string" &&
+              !!TL[k[2]]
+            );
+          })
+        );
+      }
+      function addToLib(p) {
+        var l = lib().filter(function (x) {
+          return x.name !== p.name;
+        });
+        l.push(p);
+        saveLib(l);
+      }
+      function applyPreset(p) {
+        var K = JSON.parse(JSON.stringify(p.konten)),
+          L = {},
+          have = {},
+          old = MAP,
+          oldLZ = LZ,
+          k,
+          add = 0;
+        var withE = !!p.withEntries && Array.isArray(p.entries);
+        for (k in p.laufzeiten || {}) L[k] = Number(p.laufzeiten[k]) || 0;
+        K.forEach(function (x) {
+          have[x[0]] = 1;
+        });
+        if (!have["9100"]) {
+          K.push(["9100", "Eröffnungsbilanz", "X"]);
+          have["9100"] = 1;
+        }
+        if (!withE) {
+          S.entries.forEach(function (e) {
+            [e.s, e.h].forEach(function (nr) {
+              if (!have[nr] && old[nr]) {
+                have[nr] = 1;
+                K.push(old[nr]);
+                if (oldLZ[nr] != null) L[nr] = oldLZ[nr];
+                add++;
+              }
+            });
+          });
+        }
+        K.sort(function (a, b) {
+          return a[0] < b[0] ? -1 : 1;
+        });
+        KONTEN = K;
+        rebuild();
+        for (k in L) if (MAP[k]) LZ[k] = L[k];
+        if (withE) {
+          S.entries = p.entries
+            .filter(function (e) {
+              return (
+                e &&
+                MAP[e.s] &&
+                MAP[e.h] &&
+                e.b > 0 &&
+                e.m >= 1 &&
+                e.m <= 12 &&
+                e.d >= 1 &&
+                e.d <= 30 &&
+                Number.isInteger(e.y)
+              );
+            })
+            .map(function (e) {
+              return {
+                s: e.s,
+                h: e.h,
+                b: Number(e.b),
+                t: String(e.t || "").slice(0, 80),
+                y: e.y,
+                m: e.m,
+                d: e.d,
+              };
+            });
+          var ys = (Array.isArray(p.years) ? p.years : []).filter(
+            Number.isInteger,
+          );
+          S.entries.forEach(function (e) {
+            if (ys.indexOf(e.y) < 0) ys.push(e.y);
+          });
+          if (!ys.length) ys = [S.years[0] || 2026];
+          S.years = ys.sort(function (a, b) {
+            return a - b;
+          });
+          S.y = S.years[0];
+          S.m = 0;
+        }
+        S.fk = Number(p.fk) >= 0 ? Number(p.fk) : 12;
+        S.av = Number(p.av) >= 0 ? Number(p.av) : 12;
+        $("limFK").value = S.fk;
+        $("limAV").value = S.av;
+        $("pmsg").textContent =
+          "Preset „" +
+          p.name +
+          "“ geladen." +
+          (add
+            ? " " +
+              add +
+              " Konto/Konten aus deinen Buchungen wurden beibehalten."
+            : "");
+        zeit();
+        refresh();
+      }
+      async function saveFile(name, text) {
+        var filename = name.replace(/[^\w\- äöüÄÖÜéèà]/g, "_").trim() + ".json";
+        try {
+          var d =
+            window.claude && claude.use ? await claude.use("downloads") : null;
+          if (d) {
+            await d.save({ filename: filename, data: text });
+            return;
+          }
+        } catch (e) {
+          if (e && e.code == "declined") return;
+        }
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(
+          new Blob([text], { type: "application/json" }),
+        );
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      function renderPresets() {
+        var l = lib();
+        $("plist").innerHTML = l.length
+          ? l
+              .map(function (p, i) {
+                return (
+                  '<div class="pl"><div><b>' +
+                  esc(p.name) +
+                  "</b><br><small>" +
+                  p.konten.length +
+                  " Konten · langfristig ab " +
+                  (Number(p.fk) || 12) +
+                  " Mt. · Anlagevermögen ab " +
+                  (Number(p.av) || 12) +
+                  " Mt." +
+                  (p.withEntries ? " · mit Buchungen" : "") +
+                  '</small></div><div class="row"><button class="pri" data-l="' +
+                  i +
+                  '">Laden</button><button data-f="' +
+                  i +
+                  '">Als Datei</button><button class="ib x" data-x="' +
+                  i +
+                  '" title="Aus Liste löschen">✕</button></div></div>'
+                );
+              })
+              .join("")
+          : '<p class="sub">Noch keine Presets in der Liste. Speichere das aktuelle oder lade eine Datei bzw. einen Ordner.</p>';
+      }
+      $("plist").onclick = function (e) {
+        var b = e.target.closest("button");
+        if (!b) return;
+        var l = lib();
+        if (b.dataset.l !== undefined) {
+          var p = l[Number(b.dataset.l)];
+          modal(
+            "Preset laden",
+            "<p>«" +
+              esc(p.name) +
+              "» ersetzt deine aktuellen Konten, Laufzeiten und Einstellungen" +
+              (p.withEntries
+                ? " und Buchungen"
+                : "; deine Buchungen bleiben erhalten") +
+              ".</p>",
+            [
+              { t: "Abbrechen" },
+              {
+                t: "Laden",
+                cls: "pri",
+                fn: function () {
+                  applyPreset(p);
+                },
+              },
+            ],
+          );
+        } else if (b.dataset.f !== undefined) {
+          var q = l[Number(b.dataset.f)];
+          saveFile(q.name, JSON.stringify(q, null, 2));
+        } else if (b.dataset.x !== undefined) {
+          twoStep(b, "Löschen?", function () {
+            l.splice(Number(b.dataset.x), 1);
+            saveLib(l);
+            renderPresets();
+          });
+        }
+      };
+      $("pSave").onclick = function () {
+        modal(
+          "Preset speichern",
+          '<label class="fl">Name des Presets<input type="text" id="pN" maxlength="40" value="Mein Preset"></label><p><label><input type="checkbox" id="pG"> Buchungen mitspeichern</label></p><p class="bad" id="pErr"></p>',
+          [
+            { t: "Abbrechen" },
+            {
+              t: "Nur in Liste",
+              fn: function () {
+                var n = $("pN").value.trim();
+                if (!n) {
+                  $("pErr").textContent = "Bitte einen Namen eingeben.";
+                  return false;
+                }
+                addToLib(makePreset(n, $("pG").checked));
+                renderPresets();
+              },
+            },
+            {
+              t: "Als Datei speichern",
+              cls: "pri",
+              fn: function () {
+                var n = $("pN").value.trim();
+                if (!n) {
+                  $("pErr").textContent = "Bitte einen Namen eingeben.";
+                  return false;
+                }
+                var p = makePreset(n, $("pG").checked);
+                addToLib(p);
+                renderPresets();
+                saveFile(n, JSON.stringify(p, null, 2));
+              },
+            },
+          ],
+        );
+      };
+      async function importFiles(files) {
+        var ok = 0,
+          bad = 0,
+          seen = 0;
+        for (var i = 0; i < files.length; i++) {
+          var f = files[i];
+          if (!/\.json$/i.test(f.name)) continue;
+          seen++;
+          try {
+            var p = JSON.parse(await f.text());
+            if (validPreset(p)) {
+              addToLib(p);
+              ok++;
+            } else bad++;
+          } catch (e) {
+            bad++;
+          }
+        }
+        $("pmsg").textContent = seen
+          ? ok +
+            " Preset(s) importiert" +
+            (bad
+              ? ", " + bad + " Datei(en) übersprungen (kein gültiges Preset)"
+              : "") +
+            "."
+          : "Keine .json-Dateien gefunden.";
+        renderPresets();
+      }
+      $("pFile").onclick = function () {
+        $("fileIn").click();
+      };
+      $("pDir").onclick = function () {
+        $("dirIn").click();
+      };
+      $("fileIn").onchange = function (e) {
+        importFiles(Array.from(e.target.files));
+        e.target.value = "";
+      };
+      $("dirIn").onchange = function (e) {
+        importFiles(Array.from(e.target.files));
+        e.target.value = "";
+      };
+      function view(v) {
+        S.view = v;
+        document.querySelectorAll("section[data-v]").forEach(function (s) {
+          s.hidden = (" " + s.dataset.v + " ").indexOf(" " + v + " ") < 0;
+        });
+        document.querySelectorAll("#nav .nb").forEach(function (b) {
+          b.classList.toggle("on", b.dataset.v == v);
+        });
+        save();
+      }
+      $("nav").onclick = function (e) {
+        var b = e.target.closest(".nb");
+        if (b) view(b.dataset.v);
+      };
+      function nz(x) {
+        return Math.abs(x) < 0.005;
+      }
+      function isNeutral(k) {
+        var c = k[0].charAt(0);
+        return c == "7" || c == "8";
+      }
+      function pad2(n) {
+        return (n < 10 ? "0" : "") + n;
+      }
+      function endStr() {
+        return "30." + pad2(S.m || 12) + "." + S.y;
+      }
+      function tl(l, v, c) {
+        return (
+          '<div class="tl"><span>' +
+          l +
+          "</span><b" +
+          (c ? ' class="' + c + '"' : "") +
+          ">" +
+          v +
+          "</b><small>CHF</small></div>"
+        );
+      }
+      function hbRender(ST, END) {
+        var h = "";
+        KONTEN.forEach(function (k) {
+          var nr = k[0];
+          if (nr == "9100") return;
+          var sd = side(k[2]),
+            er = sd == "E" || sd == "W",
+            so = [],
+            ha = [];
+          S.entries.forEach(function (e) {
+            var ti = e.y * 360 + (e.m - 1) * 30 + e.d;
+            if (ti > END || (er && ti <= ST)) return;
+            if (e.s == nr) so.push({ v: e.b, g: e.h == "9100" ? "EB" : e.h });
+            if (e.h == nr) ha.push({ v: e.b, g: e.s == "9100" ? "EB" : e.s });
+          });
+          if (!so.length && !ha.length && !S.leer) return;
+          var a = 0,
+            b = 0;
+          so.forEach(function (x) {
+            a += x.v;
+          });
+          ha.forEach(function (x) {
+            b += x.v;
+          });
+          var d = a - b,
+            lb = er ? "ER" : "SBi";
+          if (d > 0.004) ha.push({ v: d, g: lb });
+          else if (d < -0.004) so.push({ v: -d, g: lb });
+          var n = Math.max(so.length, ha.length, 1),
+            tot = Math.max(a, b),
+            rows = "";
+          var c = function (x) {
+            return x
+              ? (x.g ? '<span class="gk">' + esc(x.g) + "</span>" : "") +
+                  fmt(x.v)
+              : "";
+          };
+          for (var i = 0; i < n; i++)
+            rows +=
+              '<tr><td class="n">' +
+              c(so[i]) +
+              '</td><td class="n">' +
+              c(ha[i]) +
+              "</td></tr>";
+          h +=
+            '<div class="tw"><table class="tk"><thead><tr><th class="tn" colspan="2">' +
+            esc(name(nr)) +
+            '</th></tr><tr class="sh"><th>Soll</th><th class="n">Haben</th></tr></thead><tbody>' +
+            rows +
+            '<tr><td class="n dbl">' +
+            fmt(tot) +
+            '</td><td class="n dbl">' +
+            fmt(tot) +
+            "</td></tr></tbody></table></div>";
+        });
+        $("hbv").innerHTML = h
+          ? '<div class="hbg">' + h + "</div>"
+          : '<p class="sub">Noch keine Buchungen. Erfasse Geschäftsfälle oder zeige leere Konten an.</p>';
+      }
+      $("firma").oninput = function () {
+        S.firma = this.value;
+        render();
+      };
+      $("hbl").onchange = function () {
+        S.leer = this.checked;
+        render();
+      };
+
+      load();
+      S.years = S.years || [2026];
+      S.y = S.y || S.years[0];
+      S.m = S.m || 0;
+      S.entries.forEach(function (e) {
+        if (!e.y) {
+          e.y = S.years[0];
+          e.m = 1;
+          e.d = 1;
+        }
+      });
+      opts();
+      kliste();
+      zeit();
+      $("limFK").value = S.fk;
+      $("limAV").value = S.av;
+      lzUi();
+      $("firma").value = S.firma || "";
+      $("hbl").checked = !!S.leer;
+      render();
+      renderPresets();
+      view(S.view || "bil");
+    </script>
+  </body>
+</html>
